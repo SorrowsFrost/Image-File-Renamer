@@ -1,43 +1,60 @@
-﻿using System.IO;
+﻿using System;
 using System.Windows;
-using Microsoft.Win32; // WPF dialog namespace
+using Microsoft.Win32; // For Folder Picker
+using Microsoft.WindowsAPICodePack.Dialogs; // Requires reference to System.Windows.Forms
+using PhotoOrganizer;
 
-namespace ImageFileRenamer
+namespace PhotoOrganizer
 {
     public partial class MainWindow : Window
     {
+        private string sourceFolder = string.Empty;
+        private string targetFolder = string.Empty;
+        private readonly ExifLogic exifLogic = new ExifLogic();
+
         public MainWindow()
         {
             InitializeComponent();
         }
-        private void RenameButton_Click(object sender, RoutedEventArgs e)
+
+        private void SourceButton_Click(object sender, RoutedEventArgs e)
         {
-            string folderPath = FolderPathBox.Text;
-            if (Directory.Exists(folderPath))
+            var dialog = new CommonOpenFileDialog { IsFolderPicker = true };
+            if (dialog.ShowDialog() == CommonFileDialogResult.Ok)
             {
-                StatusText.Text = $"Renaming files in {folderPath}...";
-                // TODO: Add EXIF renaming logic here
-            }
-            else
-            {
-                StatusText.Text = "Please select a valid folder.";
+                sourceFolder = dialog.FileName;
+                StatusText.Text = $"Source: {sourceFolder}";
             }
         }
-        private void BrowseButton_Click(object sender, RoutedEventArgs e)
-        {
-            // WPF doesn't have a built-in folder picker, only file picker
-            var dialog = new OpenFileDialog
-            {
-                Filter = "Folders|*.none", // hacky filter, but usually you'd pick files
-                CheckFileExists = false,
-                ValidateNames = false
-            };
 
-            if (dialog.ShowDialog() == true)
+        private void TargetButton_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new CommonOpenFileDialog { IsFolderPicker = true };
+            if (dialog.ShowDialog() == CommonFileDialogResult.Ok)
             {
-                string folderPath = Path.GetDirectoryName(dialog.FileName);
-                FolderPathBox.Text = folderPath;
-                StatusText.Text = $"Selected folder: {folderPath}";
+                targetFolder = dialog.FileName;
+                StatusText.Text = $"Target: {targetFolder}";
+            }
+        }
+
+
+
+        private void OrganizeButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (string.IsNullOrEmpty(sourceFolder) || string.IsNullOrEmpty(targetFolder))
+            {
+                StatusText.Text = "Please select both source and target folders.";
+                return;
+            }
+
+            try
+            {
+                exifLogic.RenameAndOrganizeImages(sourceFolder, targetFolder);
+                StatusText.Text = "Photos organized successfully!";
+            }
+            catch (Exception ex)
+            {
+                StatusText.Text = $"Error: {ex.Message}";
             }
         }
     }
