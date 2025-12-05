@@ -48,18 +48,26 @@ Overwritten: 300
 Appended: 50
 Elapsed time: 00:12:34
 
+
 OriginalName|NewName|Action|Result
+
 IMG_001.jpg|2025-12-05_13-04-22.jpg|Rename|Success
+
 IMG_001.jpg|2025-12-05_13-04-22(1).jpg|Append|Success
+
 IMG_002.jpg|2025-12-05_13-05-10.jpg|Rename|Success
+
 IMG_003.jpg|2025-12-05_13-06-45.jpg|Skip|Duplicate detected
+
 IMG_004.jpg|2025-12-05_13-07-01.jpg|Overwrite|Success
 
 
 Preview Window (Duplicate Handling)
 
 Grey   | IMG_003.jpg → Skipped (duplicate detected)
+
 Red    | IMG_004.jpg → Overwritten with 2025-12-05_13-07-01.jpg
+
 Green  | IMG_001.jpg → Appended as 2025-12-05_13-04-22(1).jpg
 
 - Grey = Skip (file left untouched, duplicate avoided).
@@ -76,14 +84,29 @@ Green  | IMG_001.jpg → Appended as 2025-12-05_13-04-22(1).jpg
 4. 	Confirm and process.
 5. 	Check the log file for summary stats and elapsed time.
 
-🧩 Roadmap
-• 	✅ Fix noisy extension logging.
-• 	✅ Add Excel‑friendly log delimiter ().
-• 	✅ Move summary stats to top of log.
-• 	✅ Add elapsed time metric.
-• 	🔲 Resolve green append color styling.
-• 	🔲 Public GitHub release with documentation.
-• 	🔲 Future: integrate with shortcut bar project for unified workflow.
+🧩 Roadmap (Current Status)
+• 	✅ Fix noisy extension logging
+• 	🔲 Add Excel‑friendly log delimiter ()
+• 	🔲 Move summary stats to top of log
+• 	🔲 Add elapsed time metric
+• 	🔲 Resolve green append color styling
+• 	✅ Public GitHub release with documentation
+• 	🔲 Add Batch Cancel support with graceful stop + log summary
+• 	🔲 Add DateTaken fallback behavior (creation date, modified date, or skip)
+• 	🔲 Add Save Source/Destination paths option
+• 	🔲 Replace “Show Rules” with Advanced Options and Rules hub
+• 	🔲 Add Copy/Move toggle to Advanced Options
+• 	🔲 Add Overwrite behavior option (silent overwrite vs prompt)
+• 	🔲 Add File Type Skipping (default skip /system files, allow override)
+• 	🔲 Add Audit Log verbosity (verbose vs trimmed)
+• 	🔲 Add Audit Log destination (file, console, or both — console only in Safety Mode)
+• 	🔲 Add Performance ⚡ vs Safety 🛡️ mode toggle
+• 	🔲 Add Console view (Safety Mode only, live logging with color coding)
+• 	🔲 Ensure Advanced Options screen matches main UI style
+• 	🔲 Add Chrome bar dark mode support
+• 	🔲 Add friendly logging messages (e.g., “Skipped system file: desktop.ini”)
+• 	🔲 Future: integrate with shortcut bar project for unified workflow
+
 
 🤝 Collaboration
 These projects are experiments in human + AI collaboration. If you find improvements, fork it, enhance it, and share back. My goal isn’t to make “perfect” apps — it’s to show how iterative, transparent development with Copilot can empower anyone to build useful tools.
