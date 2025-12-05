@@ -48,18 +48,26 @@ Overwritten: 300
 Appended: 50
 Elapsed time: 00:12:34
 
+
 OriginalName|NewName|Action|Result
+
 IMG_001.jpg|2025-12-05_13-04-22.jpg|Rename|Success
+
 IMG_001.jpg|2025-12-05_13-04-22(1).jpg|Append|Success
+
 IMG_002.jpg|2025-12-05_13-05-10.jpg|Rename|Success
+
 IMG_003.jpg|2025-12-05_13-06-45.jpg|Skip|Duplicate detected
+
 IMG_004.jpg|2025-12-05_13-07-01.jpg|Overwrite|Success
 
 
 Preview Window (Duplicate Handling)
 
 Grey   | IMG_003.jpg → Skipped (duplicate detected)
+
 Red    | IMG_004.jpg → Overwritten with 2025-12-05_13-07-01.jpg
+
 Green  | IMG_001.jpg → Appended as 2025-12-05_13-04-22(1).jpg
 
 - Grey = Skip (file left untouched, duplicate avoided).
