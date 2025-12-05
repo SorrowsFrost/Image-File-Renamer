@@ -1,7 +1,7 @@
 ﻿<Window x:Class="PhotoOrganizer.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Photo Organizer" Height="450" Width="800"
+        Title="Photo Organizer" Height="525" Width="800"
         Background="#1E1E1E" Foreground="White">
 
     <Grid Margin="10">
@@ -11,10 +11,8 @@
             <Button x:Name="SourceButton" Content="Select Source Folder" Width="250" Margin="5"
                     Background="#444" Foreground="White" Click="SourceButton_Click"/>
             <TextBlock x:Name="SourcePathText" Text="Source: Not selected"
-                        Foreground="LightGray" Margin="5"
-                        TextAlignment="Center" HorizontalAlignment="Stretch"/>
-
-
+                       Foreground="LightGray" Margin="5"
+                       TextAlignment="Center" HorizontalAlignment="Stretch"/>
 
             <!-- Target Folder -->
             <Button x:Name="TargetButton" Content="Select Target Folder" Width="250" Margin="5"
@@ -23,11 +21,9 @@
                        Foreground="LightGray" Margin="5"
                        TextAlignment="Center" HorizontalAlignment="Stretch"/>
 
-
-
             <!-- Duplicate Handling + Preview side by side -->
             <StackPanel Orientation="Horizontal" Margin="10">
-                <!-- Left side: Duplicate handling -->
+                <!-- Left: Duplicate handling -->
                 <StackPanel Orientation="Vertical" Margin="5">
                     <TextBlock Text="Duplicate Handling:" Foreground="White" Margin="5"/>
                     
@@ -44,10 +40,32 @@
                                  Checked="OverwriteOption_Checked"/>
                 </StackPanel>
 
-                <!-- Right side: Preview panel -->
+                <!-- Right: Preview panel with naming convention selector -->
                 <Border BorderBrush="#444" BorderThickness="1" Padding="10" Margin="20,0,0,0">
                     <StackPanel Orientation="Vertical">
                         <TextBlock Text="Preview:" Foreground="White" Margin="5"/>
+
+                        <!-- Naming convention selector -->
+                        <ComboBox x:Name="NamingConventionCombo" Width="220" Margin="5"
+                                  SelectedIndex="0" SelectionChanged="NamingConventionCombo_SelectionChanged">
+                            <ComboBoxItem Content="yyyyMMdd_HHmmss" IsSelected="True"/>
+                            <ComboBoxItem Content="yyyy-MM-dd_HH-mm-ss"/>
+                            <ComboBoxItem Content="yyyy_MM_dd_HH_mm_ss"/>
+                            <ComboBoxItem Content="Custom"/>
+                        </ComboBox>
+
+                        <!-- Hint for custom formats (visible only when Custom is selected) -->
+                        <TextBlock x:Name="CustomHintText"
+                                   Text="Variables: {year} {month} {day} {hour} {minute} {second} {suffix} {ext}"
+                                   Foreground="#AAAAAA" Margin="5" Visibility="Collapsed"/>
+
+                        <!-- Custom format textbox (hidden until Custom is selected) -->
+                        <TextBox x:Name="CustomFormatTextBox" Width="300" Margin="5"
+                                 Foreground="White" Background="#2D2D30"
+                                 Visibility="Collapsed"
+                                 TextChanged="CustomFormatTextBox_TextChanged"/>
+
+                        <!-- Preview text -->
                         <TextBlock x:Name="PreviewText" Text="No preview yet"
                                    Foreground="LightGray" Margin="5"/>
                     </StackPanel>
@@ -64,7 +82,6 @@
             <TextBlock x:Name="StatusText" Text="Status: Waiting..."
                        Foreground="LightGray" Margin="5"
                        TextAlignment="Center" HorizontalAlignment="Stretch"/>
-
 
             <!-- Action Buttons -->
             <Button x:Name="OrganizeButton" Content="Organize Photos" Width="250" Margin="5"

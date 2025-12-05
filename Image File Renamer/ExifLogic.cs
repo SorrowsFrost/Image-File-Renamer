@@ -1,9 +1,11 @@
 using System;
 using System.IO;
-using IO = System.IO;
 using System.Linq;
 using MetadataExtractor;
 using MetadataExtractor.Formats.Exif;
+
+// Alias System.IO for clarity
+using IO = System.IO;
 
 namespace PhotoOrganizer
 {
@@ -13,6 +15,7 @@ namespace PhotoOrganizer
             string sourceFolder,
             string targetFolder,
             int duplicateMode,
+            string namingConvention,
             Action<int, int> progressCallback)
         {
             var files = IO.Directory.GetFiles(sourceFolder, "*.*", SearchOption.AllDirectories).ToList();
@@ -69,7 +72,9 @@ namespace PhotoOrganizer
                         suffix = "_noexif";
                     }
 
-                    string newFileName = $"{dateTaken:yyyyMMdd_HHmmss}{suffix}{extension}";
+                    // Apply naming convention (preset or custom)
+                    string newFileName = ApplyNamingConvention(dateTaken, suffix, extension, namingConvention);
+
                     string yearFolder = IO.Path.Combine(targetFolder, dateTaken.Year.ToString());
                     string monthFolder = IO.Path.Combine(yearFolder, dateTaken.Month.ToString("D2"));
                     IO.Directory.CreateDirectory(monthFolder);
@@ -84,7 +89,7 @@ namespace PhotoOrganizer
                                 int counter = 1;
                                 while (IO.File.Exists(newFilePath))
                                 {
-                                    newFileName = $"{dateTaken:yyyyMMdd_HHmmss}{suffix}_{counter}{extension}";
+                                    newFileName = ApplyNamingConvention(dateTaken, suffix, extension, namingConvention, counter);
                                     newFilePath = IO.Path.Combine(monthFolder, newFileName);
                                     counter++;
                                 }
@@ -111,6 +116,69 @@ namespace PhotoOrganizer
             }
         }
 
+        private string ApplyNamingConvention(DateTime dateTaken, string suffix, string extension, string convention, int counter = 0)
+        {
+            string result;
+
+            // Detect custom variables
+            if (convention.Contains("{year}") || convention.Contains("{month}") || convention.Contains("{day}") ||
+                convention.Contains("{hour}") || convention.Contains("{minute}") || convention.Contains("{second}") ||
+                convention.Contains("{suffix}") || convention.Contains("{ext}") || convention.Contains("{counter}"))
+            {
+                result = convention.Replace("{year}", dateTaken.ToString("yyyy"))
+                                   .Replace("{month}", dateTaken.ToString("MM"))
+                                   .Replace("{day}", dateTaken.ToString("dd"))
+                                   .Replace("{hour}", dateTaken.ToString("HH"))
+                                   .Replace("{minute}", dateTaken.ToString("mm"))
+                                   .Replace("{second}", dateTaken.ToString("ss"))
+                                   .Replace("{suffix}", suffix)
+                                   .Replace("{ext}", extension);
+
+                if (counter > 0)
+                {
+                    result = result.Replace("{counter}", counter.ToString());
+                    if (!convention.Contains("{counter}"))
+                    {
+                        int idx = result.LastIndexOf(extension, StringComparison.OrdinalIgnoreCase);
+                        if (idx >= 0) result = result.Insert(idx, $"_{counter}");
+                    }
+                }
+                else
+                {
+                    result = result.Replace("{counter}", string.Empty);
+                }
+            }
+            else
+            {
+                // Preset formats
+                switch (convention)
+                {
+                    case "yyyy-MM-dd_HH-mm-ss":
+                        result = $"{dateTaken:yyyy-MM-dd_HH-mm-ss}{suffix}{extension}";
+                        break;
+                    case "yyyy_MM_dd_HH_mm_ss":
+                        result = $"{dateTaken:yyyy_MM_dd_HH_mm_ss}{suffix}{extension}";
+                        break;
+                    default: // yyyyMMdd_HHmmss
+                        result = $"{dateTaken:yyyyMMdd_HHmmss}{suffix}{extension}";
+                        break;
+                }
+
+                if (counter > 0)
+                {
+                    result = result.Replace(extension, $"_{counter}{extension}");
+                }
+            }
+
+            // Sanitize filename
+            foreach (char c in Path.GetInvalidFileNameChars())
+            {
+                result = result.Replace(c, '_');
+            }
+
+            return result;
+        }
+
         private DateTime FallbackTimestamp(string file)
         {
             DateTime modified = IO.File.GetLastWriteTime(file);
@@ -121,6 +189,4 @@ namespace PhotoOrganizer
             return (created != DateTime.MinValue && created.Year >= 1980) ? created : DateTime.Now;
         }
     }
-
-    
 }
