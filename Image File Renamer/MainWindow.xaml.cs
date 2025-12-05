@@ -1,8 +1,7 @@
 ﻿using System;
+using System.Threading.Tasks;
 using System.Windows;
-using Microsoft.Win32; // For Folder Picker
-using Microsoft.WindowsAPICodePack.Dialogs; // Requires reference to System.Windows.Forms
-using PhotoOrganizer;
+using Microsoft.WindowsAPICodePack.Dialogs;
 
 namespace PhotoOrganizer
 {
@@ -23,7 +22,8 @@ namespace PhotoOrganizer
             if (dialog.ShowDialog() == CommonFileDialogResult.Ok)
             {
                 sourceFolder = dialog.FileName;
-                StatusText.Text = $"Source: {sourceFolder}";
+                SourcePathText.Text = $"Source: {sourceFolder}";
+                StatusText.Text = "Source folder selected.";
             }
         }
 
@@ -33,13 +33,12 @@ namespace PhotoOrganizer
             if (dialog.ShowDialog() == CommonFileDialogResult.Ok)
             {
                 targetFolder = dialog.FileName;
-                StatusText.Text = $"Target: {targetFolder}";
+                TargetPathText.Text = $"Target: {targetFolder}";
+                StatusText.Text = "Target folder selected.";
             }
         }
 
-
-
-        private void OrganizeButton_Click(object sender, RoutedEventArgs e)
+        private async void OrganizeButton_Click(object sender, RoutedEventArgs e)
         {
             if (string.IsNullOrEmpty(sourceFolder) || string.IsNullOrEmpty(targetFolder))
             {
@@ -47,9 +46,32 @@ namespace PhotoOrganizer
                 return;
             }
 
+            int duplicateMode = 0;
+            if (SkipDuplicateOption.IsChecked == true) duplicateMode = 1;
+            else if (OverwriteOption.IsChecked == true) duplicateMode = 2;
+
             try
             {
-                exifLogic.RenameAndOrganizeImages(sourceFolder, targetFolder);
+                StatusText.Text = "Processing...";
+                ProgressBar.Value = 0;
+                ProgressText.Text = "Progress: 0/0";
+
+                await Task.Run(() =>
+                {
+                    exifLogic.RenameAndOrganizeImages(
+                        sourceFolder,
+                        targetFolder,
+                        duplicateMode,
+                        (processed, total) =>
+                        {
+                            Dispatcher.Invoke(() =>
+                            {
+                                ProgressBar.Value = (double)processed / total * 100;
+                                ProgressText.Text = $"Progress: {processed}/{total}";
+                            });
+                        });
+                });
+
                 StatusText.Text = "Photos organized successfully!";
             }
             catch (Exception ex)
