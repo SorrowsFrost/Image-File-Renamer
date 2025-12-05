@@ -3,6 +3,9 @@ using System.Threading.Tasks;
 using System.Windows;
 using Microsoft.WindowsAPICodePack.Dialogs;
 
+// Alias System.IO for clarity
+using IO = System.IO;
+
 namespace PhotoOrganizer
 {
     public partial class MainWindow : Window
@@ -14,6 +17,12 @@ namespace PhotoOrganizer
         public MainWindow()
         {
             InitializeComponent();
+            Loaded += MainWindow_Loaded; // safe place to initialize preview
+        }
+
+        private void MainWindow_Loaded(object sender, RoutedEventArgs e)
+        {
+            UpdatePreview();
         }
 
         private void SourceButton_Click(object sender, RoutedEventArgs e)
@@ -79,5 +88,46 @@ namespace PhotoOrganizer
                 StatusText.Text = $"Error: {ex.Message}";
             }
         }
+
+        private void ShowRulesButton_Click(object sender, RoutedEventArgs e)
+        {
+            string rules =
+@"File Renaming Rules:
+- Metadata priority: EXIF DateTimeOriginal → QuickTime/MP4/HEIC creation tags → LastWriteTime → CreationTime
+- Fallback: '_noexif' suffix if metadata unavailable
+- Folder structure: Year/Month
+- Duplicate handling: Append counter, Skip, or Overwrite (based on selection)
+- Filename format: yyyyMMdd_HHmmss[_noexif][_counter].ext";
+
+            MessageBox.Show(rules, "Current Rules", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+
+        private void UpdatePreview()
+        {
+            if (PreviewText == null) return; // safety guard
+
+            string sampleExtension = ".jpg";
+            DateTime sampleDate = DateTime.Now;
+            string suffix = "_noexif"; // simulate fallback
+
+            string newFileName = $"{sampleDate:yyyyMMdd_HHmmss}{suffix}{sampleExtension}";
+
+            if (AppendCounterOption?.IsChecked == true)
+            {
+                PreviewText.Text = $"{newFileName}\n{sampleDate:yyyyMMdd_HHmmss}{suffix}_1{sampleExtension}";
+            }
+            else if (SkipDuplicateOption?.IsChecked == true)
+            {
+                PreviewText.Text = $"{newFileName}\n(Duplicate would be skipped)";
+            }
+            else if (OverwriteOption?.IsChecked == true)
+            {
+                PreviewText.Text = $"{newFileName}\n(Duplicate would overwrite existing)";
+            }
+        }
+
+        private void AppendCounterOption_Checked(object sender, RoutedEventArgs e) => UpdatePreview();
+        private void SkipDuplicateOption_Checked(object sender, RoutedEventArgs e) => UpdatePreview();
+        private void OverwriteOption_Checked(object sender, RoutedEventArgs e) => UpdatePreview();
     }
 }

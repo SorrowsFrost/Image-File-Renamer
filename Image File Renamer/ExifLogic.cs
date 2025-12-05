@@ -32,7 +32,6 @@ namespace PhotoOrganizer
                     {
                         var directories = ImageMetadataReader.ReadMetadata(file);
 
-                        // Try EXIF DateTimeOriginal
                         var subIfdDirectory = directories.OfType<ExifSubIfdDirectory>().FirstOrDefault();
                         if (subIfdDirectory != null &&
                             subIfdDirectory.TryGetDateTime(ExifDirectoryBase.TagDateTimeOriginal, out DateTime exifDate))
@@ -41,7 +40,6 @@ namespace PhotoOrganizer
                         }
                         else
                         {
-                            // Try QuickTime/MP4/HEIC creation tags
                             var quickTimeDir = directories.FirstOrDefault(d =>
                                 d.Name.Contains("QuickTime") || d.Name.Contains("MP4") || d.Name.Contains("HEIC"));
 

@@ -1,50 +1,76 @@
-﻿<Window
-    x:Class="PhotoOrganizer.MainWindow"
-    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    Title="Image File Renamer"
-    Height="450" Width="600"
-    Background="#1E1E1E" Foreground="White">
+﻿<Window x:Class="PhotoOrganizer.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Photo Organizer" Height="450" Width="800"
+        Background="#1E1E1E" Foreground="White">
 
-    <Grid Margin="20">
-        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+    <Grid Margin="10">
+        <StackPanel Orientation="Vertical" HorizontalAlignment="Center">
 
-            <!-- Source folder -->
+            <!-- Source Folder -->
             <Button x:Name="SourceButton" Content="Select Source Folder" Width="250" Margin="5"
-                    Background="#2D2D30" Foreground="White" Click="SourceButton_Click"/>
-            <TextBlock x:Name="SourcePathText" Text="No source selected" Margin="5"
-                       Foreground="LightGray" TextAlignment="Center"/>
+                    Background="#444" Foreground="White" Click="SourceButton_Click"/>
+            <TextBlock x:Name="SourcePathText" Text="Source: Not selected"
+                        Foreground="LightGray" Margin="5"
+                        TextAlignment="Center" HorizontalAlignment="Stretch"/>
 
-            <!-- Target folder -->
+
+
+            <!-- Target Folder -->
             <Button x:Name="TargetButton" Content="Select Target Folder" Width="250" Margin="5"
-                    Background="#2D2D30" Foreground="White" Click="TargetButton_Click"/>
-            <TextBlock x:Name="TargetPathText" Text="No target selected" Margin="5"
-                       Foreground="LightGray" TextAlignment="Center"/>
+                    Background="#444" Foreground="White" Click="TargetButton_Click"/>
+            <TextBlock x:Name="TargetPathText" Text="Target: Not selected"
+                       Foreground="LightGray" Margin="5"
+                       TextAlignment="Center" HorizontalAlignment="Stretch"/>
 
-            <!-- Duplicate handling dropdown -->
-            <StackPanel Margin="10" Orientation="Vertical">
-                <TextBlock Text="Duplicate Handling:" Foreground="White" Margin="5"/>
-    
-                <RadioButton x:Name="AppendCounterOption" Content="Append Counter" IsChecked="True"
-                             Foreground="White" Background="#2D2D30" Margin="5"/>
-    
-                <RadioButton x:Name="SkipDuplicateOption" Content="Skip Duplicate"
-                             Foreground="White" Background="#2D2D30" Margin="5"/>
-    
-                <RadioButton x:Name="OverwriteOption" Content="Overwrite Existing"
-                             Foreground="White" Background="#2D2D30" Margin="5"/>
+
+
+            <!-- Duplicate Handling + Preview side by side -->
+            <StackPanel Orientation="Horizontal" Margin="10">
+                <!-- Left side: Duplicate handling -->
+                <StackPanel Orientation="Vertical" Margin="5">
+                    <TextBlock Text="Duplicate Handling:" Foreground="White" Margin="5"/>
+                    
+                    <RadioButton x:Name="AppendCounterOption" Content="Append Counter" IsChecked="True"
+                                 Foreground="White" Background="#2D2D30" Margin="5"
+                                 Checked="AppendCounterOption_Checked"/>
+                    
+                    <RadioButton x:Name="SkipDuplicateOption" Content="Skip Duplicate"
+                                 Foreground="White" Background="#2D2D30" Margin="5"
+                                 Checked="SkipDuplicateOption_Checked"/>
+                    
+                    <RadioButton x:Name="OverwriteOption" Content="Overwrite Existing"
+                                 Foreground="White" Background="#2D2D30" Margin="5"
+                                 Checked="OverwriteOption_Checked"/>
+                </StackPanel>
+
+                <!-- Right side: Preview panel -->
+                <Border BorderBrush="#444" BorderThickness="1" Padding="10" Margin="20,0,0,0">
+                    <StackPanel Orientation="Vertical">
+                        <TextBlock Text="Preview:" Foreground="White" Margin="5"/>
+                        <TextBlock x:Name="PreviewText" Text="No preview yet"
+                                   Foreground="LightGray" Margin="5"/>
+                    </StackPanel>
+                </Border>
             </StackPanel>
 
+            <!-- Progress -->
+            <ProgressBar x:Name="ProgressBar" Width="400" Height="20" Margin="10"/>
+            <TextBlock x:Name="ProgressText" Text="Progress: 0/0"
+                       Foreground="LightGray" Margin="5"
+                       TextAlignment="Center" HorizontalAlignment="Stretch"/>
+
+            <!-- Status -->
+            <TextBlock x:Name="StatusText" Text="Status: Waiting..."
+                       Foreground="LightGray" Margin="5"
+                       TextAlignment="Center" HorizontalAlignment="Stretch"/>
+
+
+            <!-- Action Buttons -->
             <Button x:Name="OrganizeButton" Content="Organize Photos" Width="250" Margin="5"
                     Background="#007ACC" Foreground="White" Click="OrganizeButton_Click"/>
-
-            <!-- Progress bar + counter -->
-            <ProgressBar x:Name="ProgressBar" Width="400" Height="20" Margin="10" Minimum="0" Maximum="100"/>
-            <TextBlock x:Name="ProgressText" Text="Progress: 0/0" Margin="5"
-                       TextAlignment="Center" Foreground="LightGray"/>
-
-            <TextBlock x:Name="StatusText" Text="Ready" Margin="10"
-                       TextAlignment="Center" Foreground="LightGray"/>
+            <Button x:Name="ShowRulesButton" Content="Show Rules" Width="250" Margin="5"
+                    Background="#444" Foreground="White" Click="ShowRulesButton_Click"/>
         </StackPanel>
     </Grid>
 </Window>
