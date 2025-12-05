@@ -56,14 +56,26 @@
 
                         <!-- Hint for custom formats (visible only when Custom is selected) -->
                         <TextBlock x:Name="CustomHintText"
-                                   Text="Variables: {year} {month} {day} {hour} {minute} {second} {suffix} {ext}"
+                                   Text="Variables: {year} {month} {day} {hour} {minute} {second} {suffix} {ext} {counter}"
                                    Foreground="#AAAAAA" Margin="5" Visibility="Collapsed"/>
 
-                        <!-- Custom format textbox (hidden until Custom is selected) -->
-                        <TextBox x:Name="CustomFormatTextBox" Width="300" Margin="5"
-                                 Foreground="White" Background="#2D2D30"
-                                 Visibility="Collapsed"
-                                 TextChanged="CustomFormatTextBox_TextChanged"/>
+                        <!-- Custom format input with validation marker -->
+                        <StackPanel Orientation="Horizontal" Margin="5" Visibility="Collapsed" x:Name="CustomFormatPanel">
+                            <!-- Marker (hidden until invalid variables are detected) -->
+                            <TextBlock x:Name="InvalidMarker"
+                                       Text="⚠"
+                                       Foreground="OrangeRed"
+                                       FontSize="16"
+                                       VerticalAlignment="Center"
+                                       Margin="0,0,5,0"
+                                       Visibility="Collapsed"
+                                       ToolTip="Invalid variables detected. Hover for details."/>
+                            
+                            <!-- Custom format textbox -->
+                            <TextBox x:Name="CustomFormatTextBox" Width="300"
+                                     Foreground="White" Background="#2D2D30"
+                                     TextChanged="CustomFormatTextBox_TextChanged"/>
+                        </StackPanel>
 
                         <!-- Preview text -->
                         <TextBlock x:Name="PreviewText" Text="No preview yet"
@@ -84,8 +96,13 @@
                        TextAlignment="Center" HorizontalAlignment="Stretch"/>
 
             <!-- Action Buttons -->
-            <Button x:Name="OrganizeButton" Content="Organize Photos" Width="250" Margin="5"
-                    Background="#007ACC" Foreground="White" Click="OrganizeButton_Click"/>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                <Button x:Name="OrganizeButton" Content="Organize Photos" Width="180" Margin="5"
+                        Background="#007ACC" Foreground="White" Click="OrganizeButton_Click"/>
+                <Button x:Name="PreviewAllButton" Content="Preview All" Width="180" Margin="5"
+                        Background="#444" Foreground="White" Click="PreviewAllButton_Click"/>
+            </StackPanel>
+
             <Button x:Name="ShowRulesButton" Content="Show Rules" Width="250" Margin="5"
                     Background="#444" Foreground="White" Click="ShowRulesButton_Click"/>
         </StackPanel>

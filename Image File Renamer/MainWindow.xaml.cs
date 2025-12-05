@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using Microsoft.WindowsAPICodePack.Dialogs;
+using System.Text.RegularExpressions;
 
 // Alias System.IO for clarity
 using IO = System.IO;
@@ -17,7 +19,7 @@ namespace PhotoOrganizer
         public MainWindow()
         {
             InitializeComponent();
-            Loaded += MainWindow_Loaded; // safe place to initialize preview
+            Loaded += MainWindow_Loaded;
         }
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
@@ -48,80 +50,50 @@ namespace PhotoOrganizer
         }
 
         private async void OrganizeButton_Click(object sender, RoutedEventArgs e)
-{
-    if (string.IsNullOrEmpty(sourceFolder) || string.IsNullOrEmpty(targetFolder))
-    {
-        StatusText.Text = "Please select both source and target folders.";
-        return;
-    }
-
-    int duplicateMode = 0;
-    if (SkipDuplicateOption.IsChecked == true) duplicateMode = 1;
-    else if (OverwriteOption.IsChecked == true) duplicateMode = 2;
-
-    string convention = GetSelectedConventionString();
-
-    // Validate custom variables
-    if (IsCustomSelected())
-    {
-        var validVars = new[] { "year", "month", "day", "hour", "minute", "second", "suffix", "ext", "counter" };
-        var matches = System.Text.RegularExpressions.Regex.Matches(convention, @"{(.*?)}");
-
-        var invalidVars = matches.Cast<System.Text.RegularExpressions.Match>()
-                                 .Select(m => m.Groups[1].Value)
-                                 .Where(v => !validVars.Contains(v))
-                                 .Distinct()
-                                 .ToList();
-
-        if (invalidVars.Any())
         {
-            string warning = $"Warning: '{string.Join(", ", invalidVars)}' {(invalidVars.Count == 1 ? "is" : "are")} not valid variable{(invalidVars.Count == 1 ? "" : "s")}.\n" +
-                             $"Valid variables are: {{year}}, {{month}}, {{day}}, {{hour}}, {{minute}}, {{second}}, {{suffix}}, {{ext}}, {{counter}}\n\n" +
-                             $"Your format will be stripped and defaulted to: yyyyMMdd_HHmmss{{suffix}}{{ext}}\n\n" +
-                             $"Do you want to proceed anyway?";
-
-            var result = MessageBox.Show(warning, "Invalid Variables", MessageBoxButton.YesNo, MessageBoxImage.Warning);
-            if (result == MessageBoxResult.No)
+            if (string.IsNullOrEmpty(sourceFolder) || string.IsNullOrEmpty(targetFolder))
             {
-                StatusText.Text = "Operation cancelled. Please fix your custom format.";
+                StatusText.Text = "Please select both source and target folders.";
                 return;
             }
 
-            // Override convention with fallback
-            convention = "yyyyMMdd_HHmmss{suffix}{ext}";
-        }
-    }
+            int duplicateMode = 0;
+            if (SkipDuplicateOption.IsChecked == true) duplicateMode = 1;
+            else if (OverwriteOption.IsChecked == true) duplicateMode = 2;
 
-    try
-    {
-        StatusText.Text = "Processing...";
-        ProgressBar.Value = 0;
-        ProgressText.Text = "Progress: 0/0";
+            string convention = GetSelectedConventionString();
 
-        await Task.Run(() =>
-        {
-            exifLogic.RenameAndOrganizeImages(
-                sourceFolder,
-                targetFolder,
-                duplicateMode,
-                convention,
-                (processed, total) =>
+            try
+            {
+                StatusText.Text = "Processing...";
+                ProgressBar.Value = 0;
+                ProgressText.Text = "Progress: 0/0";
+
+                await Task.Run(() =>
                 {
-                    Dispatcher.Invoke(() =>
-                    {
-                        ProgressBar.Value = total == 0 ? 0 : (double)processed / total * 100;
-                        ProgressText.Text = $"Progress: {processed}/{total}";
-                    });
+                    exifLogic.RenameAndOrganizeImages(
+                        sourceFolder,
+                        targetFolder,
+                        duplicateMode,
+                        convention,
+                        (processed, total) =>
+                        {
+                            Dispatcher.Invoke(() =>
+                            {
+                                ProgressBar.Value = total == 0 ? 0 : (double)processed / total * 100;
+                                ProgressText.Text = $"Progress: {processed}/{total}";
+                            });
+                        });
                 });
-        });
 
-        StatusText.Text = "Photos organized successfully!";
-    }
-    catch (Exception ex)
-    {
-        StatusText.Text = $"Error: {ex.Message}";
-    }
-}
+                StatusText.Text = "Photos organized successfully!";
+            }
+            catch (Exception ex)
+            {
+                StatusText.Text = $"Error: {ex.Message}";
+            }
+        }
+
         private void ShowRulesButton_Click(object sender, RoutedEventArgs e)
         {
             string rules =
@@ -130,8 +102,14 @@ namespace PhotoOrganizer
 - Fallback: '_noexif' suffix if metadata unavailable
 - Folder structure: Year/Month
 - Duplicate handling: Append counter, Skip, or Overwrite (based on selection)
-- Filename format: Based on selected naming convention or custom tokens";
+- Filename format: Based on selected naming convention or custom variables";
             MessageBox.Show(rules, "Current Rules", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+
+        private void PreviewAllButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Placeholder for future dry-run mode
+            MessageBox.Show("Preview All feature coming soon!", "Preview All", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         private void UpdatePreview()
@@ -140,10 +118,39 @@ namespace PhotoOrganizer
 
             string sampleExtension = ".jpg";
             DateTime sampleDate = DateTime.Now;
-            string suffix = "_noexif"; // simulate fallback
+            string suffix = "_noexif";
 
             string convention = GetSelectedConventionString();
 
+            // Live validation for custom variables
+            if (IsCustomSelected())
+            {
+                var validVars = new[] { "year", "month", "day", "hour", "minute", "second", "suffix", "ext", "counter" };
+                var matches = Regex.Matches(convention, @"{(.*?)}");
+
+                var invalidVars = matches.Cast<Match>()
+                                         .Select(m => m.Groups[1].Value)
+                                         .Where(v => !validVars.Contains(v))
+                                         .Distinct()
+                                         .ToList();
+
+                if (invalidVars.Any())
+                {
+                    InvalidMarker.Visibility = Visibility.Visible;
+                    InvalidMarker.ToolTip = $"Invalid variables: {string.Join(", ", invalidVars)}\n" +
+                                            $"Valid variables: {string.Join(", ", validVars)}";
+                }
+                else
+                {
+                    InvalidMarker.Visibility = Visibility.Collapsed;
+                }
+            }
+            else
+            {
+                InvalidMarker.Visibility = Visibility.Collapsed;
+            }
+
+            // Build preview filename
             string baseName;
             if (IsCustomSelected())
             {
@@ -178,12 +185,10 @@ namespace PhotoOrganizer
 
         private void NamingConventionCombo_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
         {
-            // Null-guard fix: ensure controls exist before touching them
-            if (CustomFormatTextBox == null || CustomHintText == null)
-                return;
+            if (CustomFormatPanel == null || CustomHintText == null) return;
 
             bool isCustom = IsCustomSelected();
-            CustomFormatTextBox.Visibility = isCustom ? Visibility.Visible : Visibility.Collapsed;
+            CustomFormatPanel.Visibility = isCustom ? Visibility.Visible : Visibility.Collapsed;
             CustomHintText.Visibility = isCustom ? Visibility.Visible : Visibility.Collapsed;
 
             UpdatePreview();
@@ -221,8 +226,8 @@ namespace PhotoOrganizer
             {
                 case "yyyy-MM-dd_HH-mm-ss":
                     return $"{dt:yyyy-MM-dd_HH-mm-ss}";
-                case "Year_Month_Day_Hour_Minute_Second":
-                    return $"{dt:yyyy}_{dt:MM}_{dt:dd}_{dt:HH}_{dt:mm}_{dt:ss}";
+                case "yyyy_MM_dd_HH_mm_ss":
+                    return $"{dt:yyyy_MM_dd_HH_mm_ss}";
                 default:
                     return $"{dt:yyyyMMdd_HHmmss}";
             }
