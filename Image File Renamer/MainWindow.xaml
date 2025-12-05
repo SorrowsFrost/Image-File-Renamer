@@ -100,7 +100,8 @@
                 <Button x:Name="OrganizeButton" Content="Organize Photos" Width="180" Margin="5"
                         Background="#007ACC" Foreground="White" Click="OrganizeButton_Click"/>
                 <Button x:Name="PreviewAllButton" Content="Preview All" Width="180" Margin="5"
-                        Background="#444" Foreground="White" Click="PreviewAllButton_Click"/>
+                        Background="#444" Foreground="White" Click="PreviewAllButton_Click"
+                        ToolTip="If you have a lot of files, this may take a moment. Please be patient."/>
             </StackPanel>
 
             <Button x:Name="ShowRulesButton" Content="Show Rules" Width="250" Margin="5"

@@ -1,11 +1,13 @@
-﻿using System;
+﻿﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using Microsoft.WindowsAPICodePack.Dialogs;
 using System.Text.RegularExpressions;
-
-// Alias System.IO for clarity
+using System.Collections.Generic;
+using MetadataExtractor;
+using MetadataExtractor.Formats.Exif;
+using System.IO;
 using IO = System.IO;
 
 namespace PhotoOrganizer
@@ -15,6 +17,7 @@ namespace PhotoOrganizer
         private string sourceFolder = string.Empty;
         private string targetFolder = string.Empty;
         private readonly ExifLogic exifLogic = new ExifLogic();
+        private List<PreviewItem> previewItems = new List<PreviewItem>();
 
         public MainWindow()
         {
@@ -87,6 +90,17 @@ namespace PhotoOrganizer
                 });
 
                 StatusText.Text = "Photos organized successfully!";
+
+                // Use the preview items list for logging
+                string modeText = duplicateMode switch
+                {
+                    0 => "Append Counter",
+                    1 => "Skip Duplicate",
+                    2 => "Overwrite Existing",
+                    _ => "Unknown"
+                };
+
+                AuditLogger.WriteLog(targetFolder, sourceFolder, modeText, previewItems);
             }
             catch (Exception ex)
             {
@@ -105,13 +119,139 @@ namespace PhotoOrganizer
 - Filename format: Based on selected naming convention or custom variables";
             MessageBox.Show(rules, "Current Rules", MessageBoxButton.OK, MessageBoxImage.Information);
         }
+private async void PreviewAllButton_Click(object sender, RoutedEventArgs e)
+{
+    if (string.IsNullOrEmpty(sourceFolder))
+    {
+        StatusText.Text = "Please select a source folder first.";
+        return;
+    }
 
-        private void PreviewAllButton_Click(object sender, RoutedEventArgs e)
+    StatusText.Text = "Generating preview... please wait.";
+
+    string convention = GetSelectedConventionString();
+
+    // Determine duplicate handling mode from UI
+    int duplicateMode = 0; // 0 = Append Counter, 1 = Skip, 2 = Overwrite
+    if (SkipDuplicateOption.IsChecked == true) duplicateMode = 1;
+    else if (OverwriteOption.IsChecked == true) duplicateMode = 2;
+
+    var files = IO.Directory.GetFiles(sourceFolder, "*.*", IO.SearchOption.AllDirectories);
+
+    // Reset and prepare the shared preview list
+    previewItems = new List<PreviewItem>();
+
+    // Track seen names to simulate duplicate handling
+    var seenNames = new Dictionary<string, int>();
+
+    await Task.Run(() =>
+    {
+        int processed = 0;
+
+        foreach (var file in files)
         {
-            // Placeholder for future dry-run mode
-            MessageBox.Show("Preview All feature coming soon!", "Preview All", MessageBoxButton.OK, MessageBoxImage.Information);
-        }
+            try
+            {
+                // 1) Derive date + suffix + extension
+                DateTime dateTaken;
+                string suffix = "";
+                string extension = IO.Path.GetExtension(file).ToLower();
 
+                try
+                {
+                    // If you’re using MetadataExtractor; otherwise fall back
+                    var directories = ImageMetadataReader.ReadMetadata(file);
+                    var subIfdDirectory = directories.OfType<ExifSubIfdDirectory>().FirstOrDefault();
+                    DateTime? exifDate = subIfdDirectory?.GetDateTime(ExifDirectoryBase.TagDateTimeOriginal);
+                    dateTaken = exifDate ?? IO.File.GetLastWriteTime(file);
+                    if (!exifDate.HasValue) suffix = "_noexif";
+                }
+                catch
+                {
+                    dateTaken = IO.File.GetLastWriteTime(file);
+                    suffix = "_noexif";
+                }
+
+                // 2) Build the base new file name using your convention logic
+                string newFileName = exifLogic.ApplyNamingConvention(dateTaken, suffix, extension, convention);
+
+                // 3) Simulate duplicate handling
+                if (seenNames.ContainsKey(newFileName))
+                {
+                    switch (duplicateMode)
+                    {
+                        case 0: // Append counter
+                            int counter = ++seenNames[newFileName];
+                            if (!string.IsNullOrEmpty(extension))
+                            {
+                                // Insert counter before extension
+                                newFileName = newFileName.Replace(extension, $"_{counter}{extension}");
+                            }
+                            else
+                            {
+                                // No extension, just append counter at the end
+                                newFileName = $"{newFileName}_{counter}";
+                            }
+                            previewItems.Add(new PreviewItem
+                            {
+                                Original = IO.Path.GetFileName(file),
+                                New = newFileName
+                            });
+                            break;
+
+
+                        case 1: // Skip duplicate
+                            previewItems.Add(new PreviewItem
+                            {
+                                Original = IO.Path.GetFileName(file),
+                                New = "Skipped"
+                            });
+                            break;
+
+                        case 2: // Overwrite existing
+                            previewItems.Add(new PreviewItem
+                            {
+                                Original = IO.Path.GetFileName(file),
+                                New = "Overwritten"
+                            });
+                            break;
+                    }
+                }
+                else
+                {
+                    // First occurrence
+                    seenNames[newFileName] = 0;
+                    previewItems.Add(new PreviewItem
+                    {
+                        Original = IO.Path.GetFileName(file),
+                        New = newFileName
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                previewItems.Add(new PreviewItem
+                {
+                    Original = IO.Path.GetFileName(file),
+                    New = $"ERROR: {ex.Message}"
+                });
+            }
+
+            processed++;
+            Dispatcher.Invoke(() =>
+            {
+                ProgressBar.Value = (double)processed / files.Length * 100;
+                ProgressText.Text = $"Preview: {processed}/{files.Length}";
+            });
+        }
+    });
+
+    var previewWindow = new PreviewWindow();
+    previewWindow.LoadPreview(previewItems);
+    previewWindow.ShowDialog();
+
+    StatusText.Text = "Preview complete.";
+}
         private void UpdatePreview()
         {
             if (PreviewText == null) return;
@@ -206,12 +346,14 @@ namespace PhotoOrganizer
             return false;
         }
 
-        private string GetSelectedConventionString()
+                private string GetSelectedConventionString()
         {
             if (IsCustomSelected())
             {
                 var custom = CustomFormatTextBox?.Text;
-                return string.IsNullOrWhiteSpace(custom) ? "{year}{month}{day}_{hour}{minute}{second}{suffix}{ext}" : custom;
+                return string.IsNullOrWhiteSpace(custom)
+                    ? "{year}{month}{day}_{hour}{minute}{second}{suffix}{ext}"
+                    : custom;
             }
 
             if (NamingConventionCombo?.SelectedItem is System.Windows.Controls.ComboBoxItem item)

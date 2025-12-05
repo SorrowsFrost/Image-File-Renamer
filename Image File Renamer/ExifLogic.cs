@@ -115,8 +115,12 @@ namespace PhotoOrganizer
                 progressCallback(processed, total);
             }
         }
-
-        private string ApplyNamingConvention(DateTime dateTaken, string suffix, string extension, string convention, int counter = 0)
+        public void OrganizePhotos(string sourceFolder, string targetFolder)
+        {
+            // TODO: implement the actual file moving/renaming logic
+            // For now, just a placeholder so MainWindow compiles
+        }
+        public string ApplyNamingConvention(DateTime dateTaken, string suffix, string extension, string convention, int counter = 0)
         {
             string result;
 
