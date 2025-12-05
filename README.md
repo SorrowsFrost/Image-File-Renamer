@@ -59,7 +59,9 @@ IMG_004.jpg|2025-12-05_13-07-01.jpg|Overwrite|Success
 Preview Window (Duplicate Handling)
 
 Grey   | IMG_003.jpg → Skipped (duplicate detected)
+
 Red    | IMG_004.jpg → Overwritten with 2025-12-05_13-07-01.jpg
+
 Green  | IMG_001.jpg → Appended as 2025-12-05_13-04-22(1).jpg
 
 - Grey = Skip (file left untouched, duplicate avoided).
