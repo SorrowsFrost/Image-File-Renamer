@@ -9,7 +9,11 @@ using MetadataExtractor;
 using MetadataExtractor.Formats.Exif;
 using System.IO;
 using IO = System.IO;
+using Windows.Win32;
+using Windows.Win32.Foundation;
+using Windows.Win32.UI.WindowsAndMessaging;
 
+ 
 namespace PhotoOrganizer
 {
     public partial class MainWindow : Window
@@ -23,6 +27,24 @@ namespace PhotoOrganizer
         {
             InitializeComponent();
             Loaded += MainWindow_Loaded;
+            // Set window icon
+            var hWnd = new System.Windows.Interop.WindowInteropHelper(this).Handle;
+            var iconPath = Path.Combine(AppContext.BaseDirectory, "Assets", "AppIcon.ico");
+            var hIcon = PInvoke.User32.LoadImage(
+                IntPtr.Zero,
+                iconPath,
+                PInvoke.User32.ImageType.IMAGE_ICON,
+                0,
+                0,
+                PInvoke.User32.LoadImageFlags.LR_LOADFROMFILE);
+
+            PInvoke.User32.SendMessage(
+                hWnd,
+                PInvoke.User32.WindowMessage.WM_SETICON,
+                (IntPtr)1,
+                hIcon);
+
+
         }
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
