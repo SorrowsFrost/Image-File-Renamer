@@ -108,6 +108,7 @@ Green  | IMG_001.jpg → Appended as 2025-12-05_13-04-22(1).jpg
 • 	🔲 Future: integrate with shortcut bar project for unified workflow
 
 
+
 🤝 Collaboration
 These projects are experiments in human + AI collaboration. If you find improvements, fork it, enhance it, and share back. My goal isn’t to make “perfect” apps — it’s to show how iterative, transparent development with Copilot can empower anyone to build useful tools.
 
