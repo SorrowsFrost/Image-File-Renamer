@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Collections.Generic;
 using MetadataExtractor;
 using MetadataExtractor.Formats.Exif;
 
@@ -11,7 +12,7 @@ namespace PhotoOrganizer
 {
     public class ExifLogic
     {
-        public void RenameAndOrganizeImages(
+        public List<PreviewItem> RenameAndOrganizeImages(
             string sourceFolder,
             string targetFolder,
             int duplicateMode,
@@ -19,6 +20,7 @@ namespace PhotoOrganizer
             Action<int, int> progressCallback)
         {
             var files = IO.Directory.GetFiles(sourceFolder, "*.*", SearchOption.AllDirectories).ToList();
+            var previewItems = new List<PreviewItem>();
 
             int total = files.Count;
             int processed = 0;
@@ -34,8 +36,8 @@ namespace PhotoOrganizer
                     try
                     {
                         var directories = ImageMetadataReader.ReadMetadata(file);
-
                         var subIfdDirectory = directories.OfType<ExifSubIfdDirectory>().FirstOrDefault();
+
                         if (subIfdDirectory != null &&
                             subIfdDirectory.TryGetDateTime(ExifDirectoryBase.TagDateTimeOriginal, out DateTime exifDate))
                         {
@@ -71,15 +73,21 @@ namespace PhotoOrganizer
                         dateTaken = FallbackTimestamp(file);
                         suffix = "_noexif";
                     }
-
-                    // Apply naming convention (preset or custom)
+                                        // Apply naming convention (preset or custom)
                     string newFileName = ApplyNamingConvention(dateTaken, suffix, extension, namingConvention);
-
                     string yearFolder = IO.Path.Combine(targetFolder, dateTaken.Year.ToString());
                     string monthFolder = IO.Path.Combine(yearFolder, dateTaken.Month.ToString("D2"));
                     IO.Directory.CreateDirectory(monthFolder);
 
                     string newFilePath = IO.Path.Combine(monthFolder, newFileName);
+
+                    // ✅ Create a PreviewItem for this file
+                    var item = new PreviewItem
+                    {
+                        Original = IO.Path.GetFileName(file),
+                        New = newFileName,
+                        Status = "Renamed" // default
+                    };
 
                     if (IO.File.Exists(newFilePath))
                     {
@@ -93,18 +101,24 @@ namespace PhotoOrganizer
                                     newFilePath = IO.Path.Combine(monthFolder, newFileName);
                                     counter++;
                                 }
+                                item.New = newFileName;
+                                item.Status = "Appended"; // ✅ green
                                 break;
 
                             case 1: // Skip duplicate
+                                item.Status = "Skipped"; // ✅ grey
+                                previewItems.Add(item);
                                 continue;
 
                             case 2: // Overwrite existing
                                 IO.File.Delete(newFilePath);
+                                item.Status = "Overwritten"; // ✅ red
                                 break;
                         }
                     }
 
                     IO.File.Copy(file, newFilePath, true);
+                    previewItems.Add(item);
                 }
                 catch (Exception ex)
                 {
@@ -114,12 +128,15 @@ namespace PhotoOrganizer
                 processed++;
                 progressCallback(processed, total);
             }
+
+            return previewItems;
         }
-        public void OrganizePhotos(string sourceFolder, string targetFolder)
+                public void OrganizePhotos(string sourceFolder, string targetFolder)
         {
             // TODO: implement the actual file moving/renaming logic
             // For now, just a placeholder so MainWindow compiles
         }
+
         public string ApplyNamingConvention(DateTime dateTaken, string suffix, string extension, string convention, int counter = 0)
         {
             string result;

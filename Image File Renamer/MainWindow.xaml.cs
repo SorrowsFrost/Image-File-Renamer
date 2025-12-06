@@ -1,19 +1,26 @@
-﻿﻿using System;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.IO;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Windows;
-using Microsoft.WindowsAPICodePack.Dialogs;
-using System.Text.RegularExpressions;
-using System.Collections.Generic;
+using System.Windows.Interop;
+using Microsoft.WindowsAPICodePack.Dialogs; // CommonOpenFileDialog
 using MetadataExtractor;
 using MetadataExtractor.Formats.Exif;
-using System.IO;
+using System.Windows.Controls;
+using System.Windows.Input; // for MouseButtonEventArgs and MouseButtonState
+using System.Windows.Shell; // add this at the top
+
+// Alias for brevity
 using IO = System.IO;
 
 namespace PhotoOrganizer
 {
     public partial class MainWindow : Window
     {
+        // Fields
         private string sourceFolder = string.Empty;
         private string targetFolder = string.Empty;
         private readonly ExifLogic exifLogic = new ExifLogic();
@@ -23,11 +30,121 @@ namespace PhotoOrganizer
         {
             InitializeComponent();
             Loaded += MainWindow_Loaded;
+
+            // Add this instead:
+            var chrome = new System.Windows.Shell.WindowChrome
+            {
+                CaptionHeight = 0,
+                ResizeBorderThickness = new Thickness(6),
+                GlassFrameThickness = new Thickness(0),
+                UseAeroCaptionButtons = false
+            };
+            System.Windows.Shell.WindowChrome.SetWindowChrome(this, chrome);
+
         }
 
+        private void EnableDarkTitleBar()
+        {
+            var hwnd = new WindowInteropHelper(this).Handle;
+            int useDarkMode = 1;
+
+            // Try attribute 19 first
+            int attribute = 19; // DWMWA_USE_IMMERSIVE_DARK_MODE (older builds)
+            DwmSetWindowAttribute(hwnd, attribute, ref useDarkMode, sizeof(int));
+
+            // Try attribute 20 as fallback
+            attribute = 20; // DWMWA_USE_IMMERSIVE_DARK_MODE (newer builds)
+            DwmSetWindowAttribute(hwnd, attribute, ref useDarkMode, sizeof(int));
+        }
+
+        [DllImport("dwmapi.dll")]
+        private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int attrValue, int attrSize);
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
             UpdatePreview();
+        }
+
+        private void AppendCounterOption_Checked(object sender, RoutedEventArgs e)
+        {
+            if (StatusText != null)
+                StatusText.Text = "Duplicate mode: Append Counter";
+        }
+        private void Minimize_Click(object sender, RoutedEventArgs e)
+        {
+            this.WindowState = WindowState.Minimized;
+        }
+
+        private void Maximize_Click(object sender, RoutedEventArgs e)
+        {
+            this.WindowState = (this.WindowState == WindowState.Maximized)
+                ? WindowState.Normal
+                : WindowState.Maximized;
+        }
+
+        private void Close_Click(object sender, RoutedEventArgs e)
+        {
+            this.Close();
+        }
+
+        private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.LeftButton == MouseButtonState.Pressed)
+            {
+                this.DragMove();
+            }
+        }
+        private void SkipDuplicateOption_Checked(object sender, RoutedEventArgs e)
+        {
+            if (StatusText != null)
+                StatusText.Text = "Duplicate mode: Skip Duplicate";
+        }
+
+        private void OverwriteOption_Checked(object sender, RoutedEventArgs e)
+        {
+            if (StatusText != null)
+                StatusText.Text = "Duplicate mode: Overwrite Existing";
+        }
+
+        private void NamingConventionCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (NamingConventionCombo.SelectedItem is ComboBoxItem item)
+            {
+                if (item.Content?.ToString() == "Custom")
+                {
+                    if (CustomFormatPanel != null) CustomFormatPanel.Visibility = Visibility.Visible;
+                    if (CustomHintText != null) CustomHintText.Visibility = Visibility.Visible;
+                }
+                else
+                {
+                    if (CustomFormatPanel != null) CustomFormatPanel.Visibility = Visibility.Collapsed;
+                    if (CustomHintText != null) CustomHintText.Visibility = Visibility.Collapsed;
+                    if (PreviewText != null) PreviewText.Text = $"Format: {item.Content}";
+                }
+            }
+        }
+
+        private void CustomFormatTextBox_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
+        {
+            PreviewText.Text = $"Custom format: {CustomFormatTextBox.Text}";
+        }
+
+        private void ShowRulesButton_Click(object sender, RoutedEventArgs e)
+        {
+            MessageBox.Show(
+                "Duplicate Handling Rules:\n\n" +
+                "- Append Counter: Adds a number if a duplicate filename exists.\n" +
+                "- Skip Duplicate: Skips files with duplicate names.\n" +
+                "- Overwrite Existing: Replaces files with duplicate names.",
+                "Rules",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+        }
+
+        private void UpdatePreview()
+        {
+            ProgressBar.Value = 0;
+            ProgressText.Text = "Ready";
+            StatusText.Text = "Select source and target folders to begin.";
         }
 
         private void SourceButton_Click(object sender, RoutedEventArgs e)
@@ -52,6 +169,152 @@ namespace PhotoOrganizer
             }
         }
 
+        private async void PreviewAllButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (string.IsNullOrEmpty(sourceFolder) || string.IsNullOrEmpty(targetFolder))
+            {
+                StatusText.Text = "Please select both source and target folders.";
+                return;
+            }
+
+            // Duplicate mode: 0=Append, 1=Skip, 2=Overwrite
+            int duplicateMode = 0;
+            if (SkipDuplicateOption.IsChecked == true) duplicateMode = 1;
+            else if (OverwriteOption.IsChecked == true) duplicateMode = 2;
+
+            // ✅ Naming convention logic
+            string convention;
+            if (NamingConventionCombo.SelectedItem is ComboBoxItem item && item.Content.ToString() == "Custom")
+            {
+                convention = string.IsNullOrWhiteSpace(CustomFormatTextBox.Text)
+                    ? "yyyyMMdd_HHmmss"
+                    : CustomFormatTextBox.Text;
+            }
+            else
+            {
+                convention = (NamingConventionCombo.SelectedItem as ComboBoxItem)?.Content.ToString() ??
+                             "yyyyMMdd_HHmmss";
+            }
+
+            StatusText.Text = "Generating preview...";
+            previewItems = new List<PreviewItem>();
+
+            var files = IO.Directory.GetFiles(sourceFolder, "*.*", IO.SearchOption.AllDirectories);
+            var seenNames = new Dictionary<string, int>();
+
+            await Task.Run(() =>
+            {
+                int processed = 0;
+                int total = files.Length;
+
+                foreach (var file in files)
+                {
+                    try
+                    {
+                        DateTime dateTaken;
+                        string suffix = "";
+                        string extension = IO.Path.GetExtension(file).ToLower();
+
+                        // Try EXIF date; fall back to file modified time
+                        try
+                        {
+                            var directories = ImageMetadataReader.ReadMetadata(file);
+                            var subIfd = directories.OfType<ExifSubIfdDirectory>().FirstOrDefault();
+
+                            if (subIfd != null &&
+                                subIfd.TryGetDateTime(ExifDirectoryBase.TagDateTimeOriginal, out DateTime exifDate))
+                            {
+                                dateTaken = exifDate;
+                            }
+                            else
+                            {
+                                dateTaken = IO.File.GetLastWriteTime(file);
+                                suffix = "_noexif";
+                            }
+                        }
+                        catch
+                        {
+                            dateTaken = IO.File.GetLastWriteTime(file);
+                            suffix = "_noexif";
+                        }
+
+                        string newFileName = exifLogic.ApplyNamingConvention(dateTaken, suffix, extension, convention);
+
+                        if (seenNames.ContainsKey(newFileName))
+                        {
+                            switch (duplicateMode)
+                            {
+                                case 0: // Append counter
+                                    int counter = ++seenNames[newFileName];
+                                    int idx = newFileName.LastIndexOf(extension, StringComparison.OrdinalIgnoreCase);
+                                    if (idx > 0) newFileName = newFileName.Insert(idx, $"_{counter}");
+
+                                    previewItems.Add(new PreviewItem
+                                    {
+                                        Original = IO.Path.GetFileName(file),
+                                        New = newFileName,
+                                        Status = "Appended"
+                                    });
+                                    break;
+
+                                case 1: // Skip
+                                    previewItems.Add(new PreviewItem
+                                    {
+                                        Original = IO.Path.GetFileName(file),
+                                        New = "Skipped",
+                                        Status = "Skipped"
+                                    });
+                                    break;
+
+                                case 2: // Overwrite
+                                    previewItems.Add(new PreviewItem
+                                    {
+                                        Original = IO.Path.GetFileName(file),
+                                        New = "Overwritten",
+                                        Status = "Overwritten"
+                                    });
+                                    break;
+                            }
+                        }
+                        else
+                        {
+                            seenNames[newFileName] = 0;
+
+                            previewItems.Add(new PreviewItem
+                            {
+                                Original = IO.Path.GetFileName(file),
+                                New = newFileName,
+                                Status = "Renamed"
+                            });
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        previewItems.Add(new PreviewItem
+                        {
+                            Original = IO.Path.GetFileName(file),
+                            New = $"ERROR: {ex.Message}",
+                            Status = "Error"
+                        });
+                    }
+
+                    processed++;
+                    Dispatcher.Invoke(() =>
+                    {
+                        ProgressBar.Value = total == 0 ? 0 : (double)processed / total * 100;
+                        ProgressText.Text = $"Preview: {processed}/{total}";
+                    });
+                }
+            });
+
+            // Show preview window
+            var previewWindow = new PreviewWindow();
+            previewWindow.LoadPreview(previewItems);
+            previewWindow.ShowDialog();
+
+            StatusText.Text = "Preview complete.";
+        }
+
         private async void OrganizeButton_Click(object sender, RoutedEventArgs e)
         {
             if (string.IsNullOrEmpty(sourceFolder) || string.IsNullOrEmpty(targetFolder))
@@ -60,349 +323,63 @@ namespace PhotoOrganizer
                 return;
             }
 
+            // Duplicate mode: 0=Append, 1=Skip, 2=Overwrite
             int duplicateMode = 0;
             if (SkipDuplicateOption.IsChecked == true) duplicateMode = 1;
             else if (OverwriteOption.IsChecked == true) duplicateMode = 2;
 
-            string convention = GetSelectedConventionString();
-
-            try
+            string duplicateModeLabel = duplicateMode switch
             {
-                StatusText.Text = "Processing...";
-                ProgressBar.Value = 0;
-                ProgressText.Text = "Progress: 0/0";
+                0 => "Append",
+                1 => "Skip",
+                2 => "Overwrite",
+                _ => "Append"
+            };
 
-                await Task.Run(() =>
-                {
-                    exifLogic.RenameAndOrganizeImages(
-                        sourceFolder,
-                        targetFolder,
-                        duplicateMode,
-                        convention,
-                        (processed, total) =>
+            // ✅ Naming convention logic
+            string convention;
+            if (NamingConventionCombo.SelectedItem is ComboBoxItem item && item.Content.ToString() == "Custom")
+            {
+                convention = string.IsNullOrWhiteSpace(CustomFormatTextBox.Text)
+                    ? "yyyyMMdd_HHmmss"
+                    : CustomFormatTextBox.Text;
+            }
+            else
+            {
+                convention = (NamingConventionCombo.SelectedItem as ComboBoxItem)?.Content.ToString() ??
+                             "yyyyMMdd_HHmmss";
+            }
+
+            StatusText.Text = "Organizing photos...";
+            previewItems = new List<PreviewItem>();
+
+            await Task.Run(() =>
+            {
+                previewItems = exifLogic.RenameAndOrganizeImages(
+                    sourceFolder,
+                    targetFolder,
+                    duplicateMode,
+                    convention,
+                    (processed, total) =>
+                    {
+                        Dispatcher.Invoke(() =>
                         {
-                            Dispatcher.Invoke(() =>
-                            {
-                                ProgressBar.Value = total == 0 ? 0 : (double)processed / total * 100;
-                                ProgressText.Text = $"Progress: {processed}/{total}";
-                            });
+                            ProgressBar.Value = total == 0 ? 0 : (double)processed / total * 100;
+                            ProgressText.Text = $"Organize: {processed}/{total}";
                         });
-                });
+                    });
+            });
 
-                StatusText.Text = "Photos organized successfully!";
-
-                // Use the preview items list for logging
-                string modeText = duplicateMode switch
-                {
-                    0 => "Append Counter",
-                    1 => "Skip Duplicate",
-                    2 => "Overwrite Existing",
-                    _ => "Unknown"
-                };
-
-                AuditLogger.WriteLog(targetFolder, sourceFolder, modeText, previewItems);
-            }
-            catch (Exception ex)
-            {
-                StatusText.Text = $"Error: {ex.Message}";
-            }
-        }
-
-        private void ShowRulesButton_Click(object sender, RoutedEventArgs e)
-        {
-            string rules =
-@"File Renaming Rules:
-- Metadata priority: EXIF DateTimeOriginal → QuickTime/MP4/HEIC creation tags → LastWriteTime → CreationTime
-- Fallback: '_noexif' suffix if metadata unavailable
-- Folder structure: Year/Month
-- Duplicate handling: Append counter, Skip, or Overwrite (based on selection)
-- Filename format: Based on selected naming convention or custom variables";
-            MessageBox.Show(rules, "Current Rules", MessageBoxButton.OK, MessageBoxImage.Information);
-        }
-private async void PreviewAllButton_Click(object sender, RoutedEventArgs e)
-{
-    if (string.IsNullOrEmpty(sourceFolder))
-    {
-        StatusText.Text = "Please select a source folder first.";
-        return;
-    }
-
-    StatusText.Text = "Generating preview... please wait.";
-
-    string convention = GetSelectedConventionString();
-
-    // Determine duplicate handling mode from UI
-    int duplicateMode = 0; // 0 = Append Counter, 1 = Skip, 2 = Overwrite
-    if (SkipDuplicateOption.IsChecked == true) duplicateMode = 1;
-    else if (OverwriteOption.IsChecked == true) duplicateMode = 2;
-
-    var files = IO.Directory.GetFiles(sourceFolder, "*.*", IO.SearchOption.AllDirectories);
-
-    // Reset and prepare the shared preview list
-    previewItems = new List<PreviewItem>();
-
-    // Track seen names to simulate duplicate handling
-    var seenNames = new Dictionary<string, int>();
-
-    await Task.Run(() =>
-    {
-        int processed = 0;
-
-        foreach (var file in files)
-        {
+            // Write audit log
             try
             {
-                // 1) Derive date + suffix + extension
-                DateTime dateTaken;
-                string suffix = "";
-                string extension = IO.Path.GetExtension(file).ToLower();
-
-                try
-                {
-                    // If you’re using MetadataExtractor; otherwise fall back
-                    var directories = ImageMetadataReader.ReadMetadata(file);
-                    var subIfdDirectory = directories.OfType<ExifSubIfdDirectory>().FirstOrDefault();
-                    DateTime? exifDate = subIfdDirectory?.GetDateTime(ExifDirectoryBase.TagDateTimeOriginal);
-                    dateTaken = exifDate ?? IO.File.GetLastWriteTime(file);
-                    if (!exifDate.HasValue) suffix = "_noexif";
-                }
-                catch
-                {
-                    dateTaken = IO.File.GetLastWriteTime(file);
-                    suffix = "_noexif";
-                }
-
-                // 2) Build the base new file name using your convention logic
-                string newFileName = exifLogic.ApplyNamingConvention(dateTaken, suffix, extension, convention);
-
-                // 3) Simulate duplicate handling
-                if (seenNames.ContainsKey(newFileName))
-                {
-                    switch (duplicateMode)
-                    {
-                        case 0: // Append counter
-                            int counter = ++seenNames[newFileName];
-                            if (!string.IsNullOrEmpty(extension))
-                            {
-                                // Insert counter before extension
-                                newFileName = newFileName.Replace(extension, $"_{counter}{extension}");
-                            }
-                            else
-                            {
-                                // No extension, just append counter at the end
-                                newFileName = $"{newFileName}_{counter}";
-                            }
-                            previewItems.Add(new PreviewItem
-                            {
-                                Original = IO.Path.GetFileName(file),
-                                New = newFileName
-                            });
-                            break;
-
-
-                        case 1: // Skip duplicate
-                            previewItems.Add(new PreviewItem
-                            {
-                                Original = IO.Path.GetFileName(file),
-                                New = "Skipped"
-                            });
-                            break;
-
-                        case 2: // Overwrite existing
-                            previewItems.Add(new PreviewItem
-                            {
-                                Original = IO.Path.GetFileName(file),
-                                New = "Overwritten"
-                            });
-                            break;
-                    }
-                }
-                else
-                {
-                    // First occurrence
-                    seenNames[newFileName] = 0;
-                    previewItems.Add(new PreviewItem
-                    {
-                        Original = IO.Path.GetFileName(file),
-                        New = newFileName
-                    });
-                }
+                AuditLogger.WriteLog(targetFolder, sourceFolder, duplicateModeLabel, previewItems);
+                StatusText.Text = "Organization complete. Audit log created.";
             }
             catch (Exception ex)
             {
-                previewItems.Add(new PreviewItem
-                {
-                    Original = IO.Path.GetFileName(file),
-                    New = $"ERROR: {ex.Message}"
-                });
+                StatusText.Text = $"Organization complete. Audit log failed: {ex.Message}";
             }
-
-            processed++;
-            Dispatcher.Invoke(() =>
-            {
-                ProgressBar.Value = (double)processed / files.Length * 100;
-                ProgressText.Text = $"Preview: {processed}/{files.Length}";
-            });
-        }
-    });
-
-    var previewWindow = new PreviewWindow();
-    previewWindow.LoadPreview(previewItems);
-    previewWindow.ShowDialog();
-
-    StatusText.Text = "Preview complete.";
-}
-        private void UpdatePreview()
-        {
-            if (PreviewText == null) return;
-
-            string sampleExtension = ".jpg";
-            DateTime sampleDate = DateTime.Now;
-            string suffix = "_noexif";
-
-            string convention = GetSelectedConventionString();
-
-            // Live validation for custom variables
-            if (IsCustomSelected())
-            {
-                var validVars = new[] { "year", "month", "day", "hour", "minute", "second", "suffix", "ext", "counter" };
-                var matches = Regex.Matches(convention, @"{(.*?)}");
-
-                var invalidVars = matches.Cast<Match>()
-                                         .Select(m => m.Groups[1].Value)
-                                         .Where(v => !validVars.Contains(v))
-                                         .Distinct()
-                                         .ToList();
-
-                if (invalidVars.Any())
-                {
-                    InvalidMarker.Visibility = Visibility.Visible;
-                    InvalidMarker.ToolTip = $"Invalid variables: {string.Join(", ", invalidVars)}\n" +
-                                            $"Valid variables: {string.Join(", ", validVars)}";
-                }
-                else
-                {
-                    InvalidMarker.Visibility = Visibility.Collapsed;
-                }
-            }
-            else
-            {
-                InvalidMarker.Visibility = Visibility.Collapsed;
-            }
-
-            // Build preview filename
-            string baseName;
-            if (IsCustomSelected())
-            {
-                baseName = ApplyCustomTokens(convention, sampleDate, suffix, sampleExtension, counter: 0);
-            }
-            else
-            {
-                baseName = ApplyPresetFormat(convention, sampleDate) + suffix + sampleExtension;
-            }
-
-            if (AppendCounterOption?.IsChecked == true)
-            {
-                var withCounter = IsCustomSelected()
-                    ? ApplyCustomTokens(convention, sampleDate, suffix, sampleExtension, counter: 1)
-                    : baseName.Replace(sampleExtension, $"_1{sampleExtension}");
-
-                PreviewText.Text = $"{baseName}\n{withCounter}";
-            }
-            else if (SkipDuplicateOption?.IsChecked == true)
-            {
-                PreviewText.Text = $"{baseName}\n(Duplicate would be skipped)";
-            }
-            else if (OverwriteOption?.IsChecked == true)
-            {
-                PreviewText.Text = $"{baseName}\n(Duplicate would overwrite existing)";
-            }
-        }
-
-        private void AppendCounterOption_Checked(object sender, RoutedEventArgs e) => UpdatePreview();
-        private void SkipDuplicateOption_Checked(object sender, RoutedEventArgs e) => UpdatePreview();
-        private void OverwriteOption_Checked(object sender, RoutedEventArgs e) => UpdatePreview();
-
-        private void NamingConventionCombo_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
-        {
-            if (CustomFormatPanel == null || CustomHintText == null) return;
-
-            bool isCustom = IsCustomSelected();
-            CustomFormatPanel.Visibility = isCustom ? Visibility.Visible : Visibility.Collapsed;
-            CustomHintText.Visibility = isCustom ? Visibility.Visible : Visibility.Collapsed;
-
-            UpdatePreview();
-        }
-
-        private void CustomFormatTextBox_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
-        {
-            UpdatePreview();
-        }
-
-        private bool IsCustomSelected()
-        {
-            if (NamingConventionCombo?.SelectedItem is System.Windows.Controls.ComboBoxItem item)
-                return string.Equals(item.Content?.ToString(), "Custom", StringComparison.OrdinalIgnoreCase);
-            return false;
-        }
-
-                private string GetSelectedConventionString()
-        {
-            if (IsCustomSelected())
-            {
-                var custom = CustomFormatTextBox?.Text;
-                return string.IsNullOrWhiteSpace(custom)
-                    ? "{year}{month}{day}_{hour}{minute}{second}{suffix}{ext}"
-                    : custom;
-            }
-
-            if (NamingConventionCombo?.SelectedItem is System.Windows.Controls.ComboBoxItem item)
-                return item.Content?.ToString() ?? "yyyyMMdd_HHmmss";
-
-            return "yyyyMMdd_HHmmss";
-        }
-
-        private string ApplyPresetFormat(string convention, DateTime dt)
-        {
-            switch (convention)
-            {
-                case "yyyy-MM-dd_HH-mm-ss":
-                    return $"{dt:yyyy-MM-dd_HH-mm-ss}";
-                case "yyyy_MM_dd_HH_mm_ss":
-                    return $"{dt:yyyy_MM_dd_HH_mm_ss}";
-                default:
-                    return $"{dt:yyyyMMdd_HHmmss}";
-            }
-        }
-
-        private string ApplyCustomTokens(string template, DateTime dt, string suffix, string ext, int counter)
-        {
-            string result = template;
-
-            result = result.Replace("{year}", dt.ToString("yyyy"))
-                           .Replace("{month}", dt.ToString("MM"))
-                           .Replace("{day}", dt.ToString("dd"))
-                           .Replace("{hour}", dt.ToString("HH"))
-                           .Replace("{minute}", dt.ToString("mm"))
-                           .Replace("{second}", dt.ToString("ss"))
-                           .Replace("{suffix}", suffix)
-                           .Replace("{ext}", ext);
-
-            if (counter > 0)
-            {
-                result = result.Replace("{counter}", counter.ToString());
-                if (!template.Contains("{counter}"))
-                {
-                    int idx = result.LastIndexOf(ext, StringComparison.OrdinalIgnoreCase);
-                    if (idx >= 0) result = result.Insert(idx, $"_{counter}");
-                }
-            }
-            else
-            {
-                result = result.Replace("{counter}", string.Empty);
-            }
-
-            return result;
         }
     }
 }

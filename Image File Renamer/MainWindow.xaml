@@ -1,111 +1,122 @@
 ﻿<Window x:Class="PhotoOrganizer.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Photo Organizer" Height="525" Width="800"
-        Background="#1E1E1E" Foreground="White">
-
-    <Grid Margin="10">
-        <StackPanel Orientation="Vertical" HorizontalAlignment="Center">
-
-            <!-- Source Folder -->
-            <Button x:Name="SourceButton" Content="Select Source Folder" Width="250" Margin="5"
-                    Background="#444" Foreground="White" Click="SourceButton_Click"/>
-            <TextBlock x:Name="SourcePathText" Text="Source: Not selected"
-                       Foreground="LightGray" Margin="5"
-                       TextAlignment="Center" HorizontalAlignment="Stretch"/>
-
-            <!-- Target Folder -->
-            <Button x:Name="TargetButton" Content="Select Target Folder" Width="250" Margin="5"
-                    Background="#444" Foreground="White" Click="TargetButton_Click"/>
-            <TextBlock x:Name="TargetPathText" Text="Target: Not selected"
-                       Foreground="LightGray" Margin="5"
-                       TextAlignment="Center" HorizontalAlignment="Stretch"/>
-
-            <!-- Duplicate Handling + Preview side by side -->
-            <StackPanel Orientation="Horizontal" Margin="10">
-                <!-- Left: Duplicate handling -->
-                <StackPanel Orientation="Vertical" Margin="5">
-                    <TextBlock Text="Duplicate Handling:" Foreground="White" Margin="5"/>
-                    
-                    <RadioButton x:Name="AppendCounterOption" Content="Append Counter" IsChecked="True"
-                                 Foreground="White" Background="#2D2D30" Margin="5"
-                                 Checked="AppendCounterOption_Checked"/>
-                    
-                    <RadioButton x:Name="SkipDuplicateOption" Content="Skip Duplicate"
-                                 Foreground="White" Background="#2D2D30" Margin="5"
-                                 Checked="SkipDuplicateOption_Checked"/>
-                    
-                    <RadioButton x:Name="OverwriteOption" Content="Overwrite Existing"
-                                 Foreground="White" Background="#2D2D30" Margin="5"
-                                 Checked="OverwriteOption_Checked"/>
+        Title="Photo Organizer"
+        Height="525" Width="800"
+        Background="#1E1E1E" Foreground="White"
+        WindowStyle="None" ResizeMode="CanResizeWithGrip" AllowsTransparency="False">
+    
+   <!-- Outermost border: no border, matches app background -->
+    <Border BorderThickness="0" Background="#1E1E1E" SnapsToDevicePixels="True">
+        <Grid>
+            <!-- Custom dark gray title bar -->
+            <DockPanel Background="#1E1E1E" Height="32" VerticalAlignment="Top"
+                       MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+                <TextBlock Text="Photo Organizer"
+                           Foreground="White"
+                           FontWeight="Bold"
+                           VerticalAlignment="Center"
+                           Margin="10,0,0,0"/>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button Content="—" Width="40" Background="#1E1E1E" Foreground="White"
+                            Click="Minimize_Click" ToolTip="Minimize"/>
+                    <Button Content="□" Width="40" Background="#1E1E1E" Foreground="White"
+                            Click="Maximize_Click" ToolTip="Maximize"/>
+                    <Button Content="X" Width="40" Background="#1E1E1E" Foreground="White"
+                            Click="Close_Click" ToolTip="Close"/>
                 </StackPanel>
+            </DockPanel>
 
-                <!-- Right: Preview panel with naming convention selector -->
-                <Border BorderBrush="#444" BorderThickness="1" Padding="10" Margin="20,0,0,0">
-                    <StackPanel Orientation="Vertical">
-                        <TextBlock Text="Preview:" Foreground="White" Margin="5"/>
+            <!-- Main content below title bar -->
+            <Grid Margin="0,32,0,0">
+                <StackPanel Orientation="Vertical" HorizontalAlignment="Center">
+                    <!-- Source Folder -->
+                    <Button x:Name="SourceButton" Content="Select Source Folder" Width="250" Margin="5"
+                            Background="#444" Foreground="White" Click="SourceButton_Click"/>
+                    <TextBlock x:Name="SourcePathText" Text="Source: Not selected"
+                               Foreground="LightGray" Margin="5"
+                               TextAlignment="Center" HorizontalAlignment="Stretch"/>
 
-                        <!-- Naming convention selector -->
-                        <ComboBox x:Name="NamingConventionCombo" Width="220" Margin="5"
-                                  SelectedIndex="0" SelectionChanged="NamingConventionCombo_SelectionChanged">
-                            <ComboBoxItem Content="yyyyMMdd_HHmmss" IsSelected="True"/>
-                            <ComboBoxItem Content="yyyy-MM-dd_HH-mm-ss"/>
-                            <ComboBoxItem Content="yyyy_MM_dd_HH_mm_ss"/>
-                            <ComboBoxItem Content="Custom"/>
-                        </ComboBox>
+                    <!-- Target Folder -->
+                    <Button x:Name="TargetButton" Content="Select Target Folder" Width="250" Margin="5"
+                            Background="#444" Foreground="White" Click="TargetButton_Click"/>
+                    <TextBlock x:Name="TargetPathText" Text="Target: Not selected"
+                               Foreground="LightGray" Margin="5"
+                               TextAlignment="Center" HorizontalAlignment="Stretch"/>
 
-                        <!-- Hint for custom formats (visible only when Custom is selected) -->
-                        <TextBlock x:Name="CustomHintText"
-                                   Text="Variables: {year} {month} {day} {hour} {minute} {second} {suffix} {ext} {counter}"
-                                   Foreground="#AAAAAA" Margin="5" Visibility="Collapsed"/>
-
-                        <!-- Custom format input with validation marker -->
-                        <StackPanel Orientation="Horizontal" Margin="5" Visibility="Collapsed" x:Name="CustomFormatPanel">
-                            <!-- Marker (hidden until invalid variables are detected) -->
-                            <TextBlock x:Name="InvalidMarker"
-                                       Text="⚠"
-                                       Foreground="OrangeRed"
-                                       FontSize="16"
-                                       VerticalAlignment="Center"
-                                       Margin="0,0,5,0"
-                                       Visibility="Collapsed"
-                                       ToolTip="Invalid variables detected. Hover for details."/>
-                            
-                            <!-- Custom format textbox -->
-                            <TextBox x:Name="CustomFormatTextBox" Width="300"
-                                     Foreground="White" Background="#2D2D30"
-                                     TextChanged="CustomFormatTextBox_TextChanged"/>
+                    <!-- Duplicate Handling + Preview side by side -->
+                    <StackPanel Orientation="Horizontal" Margin="10">
+                        <!-- Left: Duplicate handling -->
+                        <StackPanel Orientation="Vertical" Margin="5">
+                            <TextBlock Text="Duplicate Handling:" Foreground="White" Margin="5"/>
+                            <RadioButton x:Name="AppendCounterOption" Content="Append Counter" IsChecked="True"
+                                         Foreground="White" Background="#2D2D30" Margin="5"
+                                         Checked="AppendCounterOption_Checked"/>
+                            <RadioButton x:Name="SkipDuplicateOption" Content="Skip Duplicate"
+                                         Foreground="White" Background="#2D2D30" Margin="5"
+                                         Checked="SkipDuplicateOption_Checked"/>
+                            <RadioButton x:Name="OverwriteOption" Content="Overwrite Existing"
+                                         Foreground="White" Background="#2D2D30" Margin="5"
+                                         Checked="OverwriteOption_Checked"/>
                         </StackPanel>
 
-                        <!-- Preview text -->
-                        <TextBlock x:Name="PreviewText" Text="No preview yet"
-                                   Foreground="LightGray" Margin="5"/>
+                        <!-- Right: Preview panel with naming convention selector -->
+                        <Border BorderBrush="#444" BorderThickness="1" Padding="10" Margin="20,0,0,0">
+                            <StackPanel Orientation="Vertical">
+                                <TextBlock Text="Preview:" Foreground="White" Margin="5"/>
+                                <ComboBox x:Name="NamingConventionCombo" Width="220" Margin="5"
+                                          SelectedIndex="0" SelectionChanged="NamingConventionCombo_SelectionChanged">
+                                    <ComboBoxItem Content="yyyyMMdd_HHmmss" IsSelected="True"/>
+                                    <ComboBoxItem Content="yyyy-MM-dd_HH-mm-ss"/>
+                                    <ComboBoxItem Content="yyyy_MM_dd_HH_mm_ss"/>
+                                    <ComboBoxItem Content="Custom"/>
+                                </ComboBox>
+                                <TextBlock x:Name="CustomHintText"
+                                           Text="Variables: {year} {month} {day} {hour} {minute} {second} {suffix} {ext} {counter}"
+                                           Foreground="#AAAAAA" Margin="5" Visibility="Collapsed"/>
+                                <StackPanel Orientation="Horizontal" Margin="5" Visibility="Collapsed" x:Name="CustomFormatPanel">
+                                    <TextBlock x:Name="InvalidMarker"
+                                               Text="⚠"
+                                               Foreground="OrangeRed"
+                                               FontSize="16"
+                                               VerticalAlignment="Center"
+                                               Margin="0,0,5,0"
+                                               Visibility="Collapsed"
+                                               ToolTip="Invalid variables detected. Hover for details."/>
+                                    <TextBox x:Name="CustomFormatTextBox" Width="300"
+                                             Foreground="White" Background="#2D2D30"
+                                             TextChanged="CustomFormatTextBox_TextChanged"/>
+                                </StackPanel>
+                                <TextBlock x:Name="PreviewText" Text="No preview yet"
+                                           Foreground="LightGray" Margin="5"/>
+                            </StackPanel>
+                        </Border>
                     </StackPanel>
-                </Border>
-            </StackPanel>
 
-            <!-- Progress -->
-            <ProgressBar x:Name="ProgressBar" Width="400" Height="20" Margin="10"/>
-            <TextBlock x:Name="ProgressText" Text="Progress: 0/0"
-                       Foreground="LightGray" Margin="5"
-                       TextAlignment="Center" HorizontalAlignment="Stretch"/>
+                    <!-- Progress -->
+                    <ProgressBar x:Name="ProgressBar" Width="400" Height="20" Margin="10"/>
+                    <TextBlock x:Name="ProgressText" Text="Progress: 0/0"
+                               Foreground="LightGray" Margin="5"
+                               TextAlignment="Center" HorizontalAlignment="Stretch"/>
 
-            <!-- Status -->
-            <TextBlock x:Name="StatusText" Text="Status: Waiting..."
-                       Foreground="LightGray" Margin="5"
-                       TextAlignment="Center" HorizontalAlignment="Stretch"/>
+                    <!-- Status -->
+                    <TextBlock x:Name="StatusText" Text="Status: Waiting..."
+                               Foreground="LightGray" Margin="5"
+                               TextAlignment="Center" HorizontalAlignment="Stretch"/>
 
-            <!-- Action Buttons -->
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                <Button x:Name="OrganizeButton" Content="Organize Photos" Width="180" Margin="5"
-                        Background="#007ACC" Foreground="White" Click="OrganizeButton_Click"/>
-                <Button x:Name="PreviewAllButton" Content="Preview All" Width="180" Margin="5"
-                        Background="#444" Foreground="White" Click="PreviewAllButton_Click"
-                        ToolTip="If you have a lot of files, this may take a moment. Please be patient."/>
-            </StackPanel>
+                    <!-- Action Buttons -->
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <Button x:Name="OrganizeButton" Content="Organize Photos" Width="180" Margin="5"
+                                Background="#007ACC" Foreground="White" Click="OrganizeButton_Click"/>
+                        <Button x:Name="PreviewAllButton" Content="Preview All" Width="180" Margin="5"
+                                Background="#444" Foreground="White" Click="PreviewAllButton_Click"
+                                ToolTip="If you have a lot of files, this may take a moment. Please be patient."/>
+                    </StackPanel>
 
-            <Button x:Name="ShowRulesButton" Content="Show Rules" Width="250" Margin="5"
-                    Background="#444" Foreground="White" Click="ShowRulesButton_Click"/>
-        </StackPanel>
-    </Grid>
+                    <Button x:Name="ShowRulesButton" Content="Show Rules" Width="250" Margin="5"
+                            Background="#444" Foreground="White" Click="ShowRulesButton_Click"/>
+                </StackPanel>
+            </Grid>
+        </Grid>
+    </Border>
 </Window>

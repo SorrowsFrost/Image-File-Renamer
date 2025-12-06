@@ -5,6 +5,7 @@
         <TargetFramework>net10.0-windows</TargetFramework>
         <RootNamespace>Image_File_Renamer</RootNamespace>
         <Nullable>enable</Nullable>
+        <ApplicationIcon>Assets\AppIcon.ico</ApplicationIcon>
         <ImplicitUsings>enable</ImplicitUsings>
         <UseWPF>true</UseWPF>
     </PropertyGroup>
@@ -12,8 +13,23 @@
     <ItemGroup>
       <PackageReference Include="MetadataExtractor" Version="2.9.0" />
       <PackageReference Include="Microsoft-WindowsAPICodePack-Shell" Version="1.1.5" />
-      <PackageReference Include="PhotoSauce.MagicScaler" Version="0.15.0" />
+        <Content Include="Assets\AppIcon.ico">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+
+        <PackageReference Include="PhotoSauce.MagicScaler" Version="0.15.0" />
       <PackageReference Include="System.Drawing.Common" Version="10.0.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="Assets\AppIcon.ico" />
+      <Content Include="Assets\AppIcon.ico">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <None Remove="Assets\photo_calendar_icon.png" />
+      <Content Include="Assets\photo_calendar_icon.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
     </ItemGroup>
 
 </Project>

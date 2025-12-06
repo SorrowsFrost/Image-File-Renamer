@@ -26,22 +26,17 @@ namespace PhotoOrganizer
 
                 foreach (var item in items)
                 {
-                    string action;
-                    if (item.New == "Skipped") action = "[Skipped]";
-                    else if (item.New == "Overwritten") action = "[Overwritten]";
-                    else if (item.New != null && item.New.Contains("_1")) action = "[Countered]";
-                    else action = "[Renamed]";
-
+                    string action = $"[{item.Status}]";
                     sb.AppendLine($"{item.Original} → {item.New} {action}");
                 }
 
                 sb.AppendLine();
-                int renamed = items.Count(i => !(i.New == "Skipped" || i.New == "Overwritten"));
-                int skipped = items.Count(i => i.New == "Skipped");
-                int overwritten = items.Count(i => i.New == "Overwritten");
-                int countered = items.Count(i => i.New != null && i.New.Contains("_1"));
+                int renamed = items.Count(i => i.Status == "Renamed" || i.Status == "Appended");
+                int skipped = items.Count(i => i.Status == "Skipped");
+                int overwritten = items.Count(i => i.Status == "Overwritten");
+                int appended = items.Count(i => i.Status == "Appended");
 
-                sb.AppendLine($"Summary: Processed {items.Count} | Renamed {renamed} | Skipped {skipped} | Overwritten {overwritten} | Countered {countered}");
+                sb.AppendLine($"Summary: Processed {items.Count} | Renamed {renamed} | Skipped {skipped} | Overwritten {overwritten} | Appended {appended}");
 
                 File.WriteAllText(logFile, sb.ToString());
             }
