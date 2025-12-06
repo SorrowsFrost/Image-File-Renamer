@@ -1,0 +1,70 @@
+🔮 Long-Term Vision for the Renamer
+Think of it as a media ingestion engine with three layers:
+1. 	Core Renaming Logic
+• 	EXIF DateTaken parsing
+• 	Duplicate handling (overwrite, skip, hybrid)
+• 	Fallbacks for missing metadata
+• 	Batch cancel and safety modes
+2. 	Smart Detection Layer
+• 	Receipt/document detection → split into 
+• 	Video normalization/transcoding → ensure web playback compatibility
+• 	Optional face/object tagging (future AI expansion)
+3. 	Integration Layer
+• 	Audit logging (console/file/both)
+• 	Web API endpoints → family site ingestion portal
+• 	Configurable rules hub (UI + JSON config)
+• 	Sync hooks → OneDrive/local archive
+
+🛠️ Next Steps to Streamline for Endgame
+Here’s how we can prepare now:
+• 	Abstract the logic:
+• 	Separate renaming engine from UI.
+• 	Make the backend callable via CLI or API.
+• 	This way, the web portal can reuse the same engine without duplication.
+• 	Design modular options:
+• 	Advanced Options hub should be extensible.
+• 	Add toggles for detection, audit verbosity, destination paths.
+• 	Keep everything grouped and reversible.
+• 	Plan directory structure:
+• 	 → clean archive
+• 	 → flagged docs
+• 	 → soft deletes for undo
+• 	 → transparent recordkeeping
+• 	Future-proof UI:
+• 	Desktop app stays as a power-user interface.
+• 	Web portal uses the same backend but with drag-and-drop ingestion.
+• 	Both share the same rules hub for consistency.
+
+🚀 Suggested Milestones
+1. 	Finalize renamer core (stability, batch cancel, overwrite hybrid).
+2. 	Add audit log destination options (console/file/both).
+3. 	Implement detection toggle (receipts/documents → separate folder).
+4. 	Abstract backend into a callable service (CLI/API).
+5. 	Integrate with ingestion portal (drag-and-drop → backend renamer).
+6. 	Polish UI for transparency (preview grid, friendly logs).
+
+This way, the renamer becomes the engine room of your family site and future projects. Every new feature we add now is an investment in that bigger vision.
+
+📋 Feature Roadmap for the Image File Renamer (Endgame Prep)
+Core Stability
+• 	Batch Cancel option
+• 	DateTaken fallback logic
+• 	Duplicate overwrite hybrid mode
+• 	Save source/destination paths
+• 	UI consistency + dark mode polish
+Advanced Options
+• 	Copy/Move toggle (bottom bar)
+• 	File type skipping with override
+• 	Overwrite behavior option
+• 	Audit log destination (Console/File/Both)
+• 	Performance vs safety mode toggle
+Smart Features
+• 	Receipt/document detection → flagged to 
+• 	Video normalization/transcoding for web playback
+• 	EXIF repair for missing metadata
+• 	Friendly logging messages + summary stats
+Integration Layer
+• 	API endpoints for ingestion portal
+• 	Audit log viewer (web + desktop)
+• 	Configurable rules hub (JSON + UI)
+• 	Hooks for OneDrive sync
