@@ -85,6 +85,7 @@ Green  | IMG_001.jpg → Appended as 2025-12-05_13-04-22(1).jpg
 5. 	Check the log file for summary stats and elapsed time.
 
 🧩 Roadmap (Current Status) (Apologize for the spacing, github just wants to run all the items together instead of seperating them cleanly)
+  
   • 	✅ Fix noisy extension logging
   
   • 	🔲 Add Excel‑friendly log delimiter ()
