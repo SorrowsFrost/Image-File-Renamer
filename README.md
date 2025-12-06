@@ -85,27 +85,28 @@ Green  | IMG_001.jpg → Appended as 2025-12-05_13-04-22(1).jpg
 5. 	Check the log file for summary stats and elapsed time.
 
 🧩 Roadmap (Current Status)
-• 	✅ Fix noisy extension logging
-• 	🔲 Add Excel‑friendly log delimiter ()
-• 	🔲 Move summary stats to top of log
-• 	🔲 Add elapsed time metric
-• 	🔲 Resolve green append color styling
-• 	✅ Public GitHub release with documentation
-• 	🔲 Add Batch Cancel support with graceful stop + log summary
-• 	🔲 Add DateTaken fallback behavior (creation date, modified date, or skip)
-• 	🔲 Add Save Source/Destination paths option
-• 	🔲 Replace “Show Rules” with Advanced Options and Rules hub
-• 	🔲 Add Copy/Move toggle to Advanced Options
-• 	🔲 Add Overwrite behavior option (silent overwrite vs prompt)
-• 	🔲 Add File Type Skipping (default skip /system files, allow override)
-• 	🔲 Add Audit Log verbosity (verbose vs trimmed)
-• 	🔲 Add Audit Log destination (file, console, or both — console only in Safety Mode)
-• 	🔲 Add Performance ⚡ vs Safety 🛡️ mode toggle
-• 	🔲 Add Console view (Safety Mode only, live logging with color coding)
-• 	🔲 Ensure Advanced Options screen matches main UI style
-• 	🔲 Add Chrome bar dark mode support
-• 	🔲 Add friendly logging messages (e.g., “Skipped system file: desktop.ini”)
-• 	🔲 Future: integrate with shortcut bar project for unified workflow
+  • 	✅ Fix noisy extension logging
+  • 	🔲 Add Excel‑friendly log delimiter ()
+  • 	🔲 Move summary stats to top of log
+  • 	🔲 Add elapsed time metric
+  • 	🔲 Resolve green append color styling
+  • 	✅ Public GitHub release with documentation
+  • 	🔲 Add Batch Cancel support with graceful stop + log summary
+  • 	🔲 Add DateTaken fallback behavior (creation date, modified date, or skip)
+  • 	🔲 Add Save Source/Destination paths option
+  • 	🔲 Replace “Show Rules” with Advanced Options and Rules hub
+  • 	🔲 Add Copy/Move toggle to Advanced Options
+  
+  • 	🔲 Add Overwrite behavior option (silent overwrite vs prompt)
+  • 	🔲 Add File Type Skipping (default skip /system files, allow override)
+  • 	🔲 Add Audit Log verbosity (verbose vs trimmed)
+  • 	🔲 Add Audit Log destination (file, console, or both — console only in Safety Mode)
+  • 	🔲 Add Performance ⚡ vs Safety 🛡️ mode toggle
+  • 	🔲 Add Console view (Safety Mode only, live logging with color coding)
+  • 	🔲 Ensure Advanced Options screen matches main UI style
+  • 	🔲 Add Chrome bar dark mode support
+  • 	🔲 Add friendly logging messages (e.g., “Skipped system file: desktop.ini”)
+  • 	🔲 Future: integrate with shortcut bar project for unified workflow
 
 
 
