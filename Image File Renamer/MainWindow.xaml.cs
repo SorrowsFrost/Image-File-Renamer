@@ -314,9 +314,11 @@ namespace PhotoOrganizer
 
             StatusText.Text = "Preview complete.";
         }
-
+       
+       
         private async void OrganizeButton_Click(object sender, RoutedEventArgs e)
         {
+            var startTime = DateTime.Now;
             if (string.IsNullOrEmpty(sourceFolder) || string.IsNullOrEmpty(targetFolder))
             {
                 StatusText.Text = "Please select both source and target folders.";
@@ -369,17 +371,19 @@ namespace PhotoOrganizer
                         });
                     });
             });
+            var elapsed = DateTime.Now - startTime;
 
             // Write audit log
             try
             {
-                AuditLogger.WriteLog(targetFolder, sourceFolder, duplicateModeLabel, previewItems);
+                AuditLogger.WriteLog(targetFolder, sourceFolder, duplicateModeLabel, previewItems, elapsed);
                 StatusText.Text = "Organization complete. Audit log created.";
             }
             catch (Exception ex)
             {
                 StatusText.Text = $"Organization complete. Audit log failed: {ex.Message}";
             }
+
         }
     }
 }
